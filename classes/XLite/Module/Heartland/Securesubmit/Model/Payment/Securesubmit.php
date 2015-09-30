@@ -171,8 +171,6 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
                 $payment = $this->chargeService->refund($this->transaction->getValue(), 'usd', $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue());
 
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
-            $transaction->setDataCell('heartland_date', getdate()->format('Y-m-d H:i:s'));
-
             $transaction->setDataCell('refund_txnid', $payment->transactionId);
 
         } catch (\Exception $e) {

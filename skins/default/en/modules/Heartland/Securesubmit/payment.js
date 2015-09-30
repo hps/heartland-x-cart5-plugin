@@ -7,7 +7,9 @@ core.bind(
       'checkout.paymentTpl.postprocess',
       function(event, data) {
         var myselect = document.getElementById("card-expiry-year"), year = new Date().getFullYear();
-        var gen = function(max){do{myselect.add(new Option(year++),null);}while(max-->0);}(10);
+        if (myselect)
+          var gen = function(max){do{myselect.add(new Option(year++),null);}while(max-->0);}(10);
+
         var heartlandContainer = jQuery('.heartland-container');
         
         if (heartlandContainer.length && !handler) {
