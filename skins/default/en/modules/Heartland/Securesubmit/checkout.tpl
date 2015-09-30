@@ -54,12 +54,9 @@
             </div>
 
             <div class="cardCVV2 required">
-                <div class="title">{t(#Security code#)}:</div>
+                <div class="title lite-hide">{t(#Security code#)}:</div>
                 <div class="value">
-                    <input size="5" maxlength="4" id="card-cvc" type="text" autocomplete="off">
-                </div>
-                <div class="icon-container">
-                    <div class="icon mc"></div>
+                    <input size="5" maxlength="4" placeholder="CVV" id="card-cvc" type="text" autocomplete="off">
                 </div>
             </div>
 

@@ -243,33 +243,5 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
             $this->securesubmitLibIncluded = true;
         }
     }
-
-    protected function detectEventId()
-    {
-        $body = @file_get_contents('php://input');
-        $event = @json_decode($body);
-        $id = $event ? $event->id : null;
-
-        return ($id && preg_match('/^evt_/Ss', $id)) ? $id : null;
-    }
-
-    protected function checkResponse($payment, &$note)
-    {
-        $result = $this->checkTotal($this->transaction->getCurrency()->convertIntegerToFloat($payment->amount))
-            && $this->checkCurrency(strtoupper($payment->currency));
-
-        if ($result && $payment->captured != $this->isCapture()) {
-            $result = false;
-            $note .= static::t(
-                'Requested transaction type: X; real transaction type: Y',
-                array(
-                    'actual' => $this->isCapture() ? 'capture' : 'authorization',
-                    'real'   => $payment->captured ? 'capture' : 'authorization',
-                )
-            );
-        }
-
-        return $result;
-    }
 }
 

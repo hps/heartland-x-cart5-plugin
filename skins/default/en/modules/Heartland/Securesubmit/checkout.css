@@ -111,7 +111,6 @@
 
 .cc-form-container div.content div.cardCVV2 {
     height: 75px;
-    display: none;
 }
 
 .cc-form-container div.content div.cardCVV2 input {
@@ -129,10 +128,6 @@
     bottom: 13px;
 }
 
-.cc-form-container div.content div.cardCVV2 div.right-text.blank {
-    display: none;
-}
-
 .cc-form-container div.content div.cardCVV2 div.icon-container {
     width: 96px;
     height: 96px;
@@ -141,9 +136,6 @@
     bottom: 0px;
 }
 
-.cc-form-container div.content div.cardCVV2 div.icon-container div.icon.blank {
-    display: none;
-}
 
 .cc-form-container div.content div.cardCVV2 div.icon-container div.icon {
     width: 128px;
