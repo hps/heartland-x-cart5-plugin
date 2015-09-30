@@ -1,0 +1,15 @@
+XLite\Model\Payment\Method:
+  - service_name: Securesubmit
+    class: Module\Heartland\Securesubmit\Model\Payment\Securesubmit
+    type: C
+    countries: [US]
+    translations:
+      - code: en
+        name: 'Securesubmit'
+    settings:
+      - name: publicKey
+      - name: secretKey
+      - name: type
+        value: sale
+      - name: prefix
+        value: xcart
