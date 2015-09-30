@@ -9,10 +9,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
 
     public function getWebhookURL()
     {
-        return \XLite::getInstance()->getShopURL(
-            \XLite\Core\Converter::buildURL('callback', null, array(), \XLite::CART_SELF),
-            \XLite\Core\Config::getInstance()->Security->customer_security
-        );
+        return '';
     }
 
     public function getReferralPageURL(\XLite\Model\Payment\Method $method)
