@@ -12,7 +12,7 @@ abstract class Payment extends \XLite\View\Checkout\Payment implements \XLite\Ba
         if ($method && $method->isEnabled()) {
             $list[] = 'modules/Heartland/Securesubmit/payment.js';
             $list[] = array(
-                'url' => 'https://api.heartlandportico.com/SecureSubmit.v1/token/2.0/securesubmit.js',
+                'url' => 'https://api2.heartlandportico.com/SecureSubmit.v1/token/2.0/securesubmit.js',
             );
         }
 
