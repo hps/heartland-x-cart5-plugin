@@ -1,4 +1,5 @@
 <?php
+
 namespace XLite\Module\Heartland\Securesubmit\View;
 
 class Config extends \XLite\View\AView
@@ -19,7 +20,7 @@ class Config extends \XLite\View\AView
     protected function getCommonFiles()
     {
         $list = parent::getCommonFiles();
-        return $list;        
+        return $list;
     }
 
     protected function getDefaultTemplate()

@@ -11,7 +11,7 @@ core.bind(
           var gen = function(max){do{myselect.add(new Option(year++),null);}while(max-->0);}(10);
 
         var heartlandContainer = jQuery('.heartland-container');
-        
+
         if (heartlandContainer.length && !handler) {
           handler = hps;
 
@@ -34,12 +34,17 @@ core.bind(
       'checkout.common.ready',
       function(event, state) {
         var heartlandContainer = jQuery('.heartland-container');
-        if (handler && heartlandContainer.length && !heartlandContainer.find('#securesubmit_token').val()) {
+
+        if (handler &&
+            heartlandContainer.length &&
+            heartlandContainer.find('[name="payment[securesubmit_use_stored_card]"]:checked').val() === 'new' &&
+            !heartlandContainer.find('#securesubmit_token').val()
+        ) {
           var card  = jQuery('#card-number').val().replace(/\D/g, '');
           var cvc   = jQuery('#card-cvc').val();
           var month = jQuery('#card-expiry-month').val();
           var year  = jQuery('#card-expiry-year').val();
-          
+
           hps.tokenize({
             data: {
               public_key: heartlandContainer.data('key'),
@@ -50,6 +55,10 @@ core.bind(
             },
             success: function(response) {
               $('#securesubmit_token').val(response.token_value);
+              $('#securesubmit_card_type').val(response.card_type);
+              $('#securesubmit_last_four').val(card.substr(-4));
+              $('#securesubmit_exp_month').val(response.exp_month);
+              $('#securesubmit_exp_year').val(response.exp_year);
               jQuery('body').css('overflow', 'visible');
               jQuery('form.place').submit();
             },

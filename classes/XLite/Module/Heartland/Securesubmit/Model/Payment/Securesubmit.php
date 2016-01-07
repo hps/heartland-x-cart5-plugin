@@ -1,4 +1,5 @@
 <?php
+
 namespace XLite\Module\Heartland\Securesubmit\Model\Payment;
 
 class Securesubmit extends \XLite\Model\Payment\Base\Online
@@ -6,6 +7,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
     protected $securesubmitLibIncluded = false;
     protected $chargeService;
     protected $eventId;
+    protected $eventManager;
 
     public function getWebhookURL()
     {
@@ -25,7 +27,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
     public function getAllowedTransactions()
     {
         return array(
-            \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_CAPTURE,            
+            \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_CAPTURE,
             \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_CAPTURE_PART,
             \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_VOID,
             \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_REFUND,
@@ -47,7 +49,9 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
     {
         $errors = parent::getInputErrors($data);
 
-        if (empty($data['securesubmit_token'])) {
+        if ((empty($data['securesubmit_token']) && $data['securesubmit_use_stored_card'] === 'new') ||
+            ($data['securesubmit_use_stored_card'] !== 'new' && !empty($data['securesubmit_token']))
+        ) {
             $errors[] = \XLite\Core\Translation::lbl(
                 'Payment processed with errors. Please, try again or ask administrator'
             );
@@ -80,10 +84,11 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         $this->includeSecuresubmitLibrary();
 
         $note = '';
+        $requestMulti = false;
 
         try {
-            $suToken = new \HpsTokenData();
-            $suToken->tokenValue = $this->request['securesubmit_token'];
+            $token = new \HpsTokenData();
+            $token->tokenValue = $this->request['securesubmit_token'];
 
             $address = new \HpsAddress();
             $address->address = $this->getProfile()->getBillingAddress()->getStreet();
@@ -95,17 +100,59 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
             $cardHolder = new \HpsCardHolder();
             $cardHolder->firstName = $this->getProfile()->getBillingAddress()->getFirstname();
             $cardHolder->lastName = $this->getProfile()->getBillingAddress()->getLastname();
-            $cardHolder->phone = preg_replace('/[^0-9]/', '',  $this->getCustomerPhone());
+            $cardHolder->phone = preg_replace('/[^0-9]/', '', $this->getCustomerPhone());
             $cardHolder->emailAddress = $this->getProfile()->getLogin();
             $cardHolder->address = $address;
 
             $details = new \HpsTransactionDetails();
             $details->invoiceNumber = $this->getSetting('prefix') . $this->transaction->getPublicTxnId();
 
-            if ($this->isCapture())
-                $payment = $this->chargeService->charge($this->transaction->getValue(), 'usd', $suToken, $cardHolder, $details);
-            else
-                $payment = $this->chargeService->authorize($this->transaction->getValue(), 'usd', $suToken, $cardHolder, $details);
+            if (isset($this->request['securesubmit_use_stored_card']) && $this->request['securesubmit_use_stored_card'] !== 'new') {
+                $cardId = intval($this->request['securesubmit_use_stored_card']);
+                $repo = \XLite\Core\Database::getRepo('\XLite\Module\Heartland\Securesubmit\Model\SecuresubmitCreditCard');
+                $cards = $repo->findBy(array(
+                    'profileId' => $this->getProfile()->getProfileId(),
+                    'id'        => $cardId,
+                ));
+                if ($cards === array()) {
+                    throw new Exception('Stored card cannot be found.');
+                }
+                $token->tokenValue = $cards[0]->getToken();
+            } else {
+                $requestMulti = isset($this->request['securesubmit_save_card']) && $this->request['securesubmit_save_card'] === 'save';
+            }
+
+            if ($this->isCapture()) {
+                $payment = $this->chargeService->charge(
+                    $this->transaction->getValue(),
+                    'usd',
+                    $token,
+                    $cardholder,
+                    $requestMulti,
+                    $details
+                );
+            } else {
+                $payment = $this->chargeService->authorize(
+                    $this->transaction->getValue(),
+                    'usd',
+                    $token,
+                    $cardholder,
+                    $requestMulti,
+                    $details
+                );
+            }
+
+            if ($requestMulti && $payment->tokenData->responseCode === '0' && $payment->tokenData->tokenValue !== '') {
+                $card = new \XLite\Module\Heartland\Securesubmit\Model\SecuresubmitCreditCard();
+                $this->getEM()->persist($card);
+                $card->setProfileId($this->getProfile()->getProfileId());
+                $card->setToken($payment->tokenData->tokenValue);
+                $card->setCardBrand(isset($this->request['securesubmit_card_type']) ? $this->request['securesubmit_card_type'] : '');
+                $card->setExpMonth(isset($this->request['securesubmit_exp_month']) ? $this->request['securesubmit_exp_month'] : '');
+                $card->setExpYear(isset($this->request['securesubmit_exp_year']) ? $this->request['securesubmit_exp_year'] : '');
+                $card->setLastFour(isset($this->request['securesubmit_last_four']) ? $this->request['securesubmit_last_four'] : '');
+                $this->getEM()->flush();
+            }
 
             $result = static::COMPLETED;
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
@@ -149,7 +196,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         }
 
         $transaction->setStatus($backendTransactionStatus);
-         
+
         return \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS == $backendTransactionStatus;
     }
 
@@ -158,17 +205,37 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         return $this->doRefund($transaction, true);
     }
 
+    protected function getEM()
+    {
+        if ($this->entityManager == null) {
+            $this->entityManager = \XLite\Core\Database::getEM();
+        }
+        if (!$this->entityManager->isOpen()) {
+            $this->entityManager = $this->entityManager->create(
+                $this->entityManager->getConnection(),
+                $this->entityManager->getConfiguration()
+            );
+        }
+        return $this->entityManager;
+    }
+
     protected function doRefund(\XLite\Model\Payment\BackendTransaction $transaction, $isDoVoid = false)
     {
         $this->includeSecuresubmitLibrary();
 
         $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_FAILED;
+        $transactionId = $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue();
 
         try {
-            if ($isDoVoid)
-                $payment = $this->chargeService->void($transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue());
-            else
-                $payment = $this->chargeService->refund($this->transaction->getValue(), 'usd', $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue());
+            if ($isDoVoid) {
+                $payment = $this->chargeService->void($transactionId);
+            } else {
+                $payment = $this->chargeService->refund(
+                    $this->transaction->getValue(),
+                    'usd',
+                    $transactionId
+                );
+            }
 
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
             $transaction->setDataCell('refund_txnid', $payment->transactionId);
@@ -239,4 +306,3 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         }
     }
 }
-
