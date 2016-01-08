@@ -37,6 +37,16 @@
     </tr>
 
     <tr>
+      <td class="setting-name"><label for="settings_useSavedCards">{t(#Allow saved cards#)}</label></td>
+      <td>
+      <select id="settings_useSavedCards" name="settings[useSavedCards]" class="form-control">
+        <option value="no" selected="{isSelected(paymentMethod.getSetting(#useSavedCards#),#no#)}">{t(#No#)}</option>
+        <option value="yes" selected="{isSelected(paymentMethod.getSetting(#useSavedCards#),#yes#)}">{t(#Yes#)}</option>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
       <td>&nbsp;</td>
       <td>
         <div class="buttons">

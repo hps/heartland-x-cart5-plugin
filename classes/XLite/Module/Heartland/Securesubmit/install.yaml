@@ -13,3 +13,5 @@ XLite\Model\Payment\Method:
         value: sale
       - name: prefix
         value: xcart
+      - name: useSavedCards
+        value: no

@@ -5,13 +5,37 @@
             <div class="lock"></div>
             <h2>{t(#Secure credit card payment#)}</h2>
         </div>
+        {if:profile.hasSecuresubmitCreditCards()}
+        {if:useSavedCardsEnabled()}
+            <div class="saved-cards">
+                <h3>Saved Cards</h3>
+                <ul>
+                    {foreach:profile.getSecuresubmitCreditCards(),i,cc}
+                        <li>
+                            <label for="securesubmit_use_stored_card_{i}">
+                                <input type="radio" id="securesubmit_use_stored_card_{i}" name="payment[securesubmit_use_stored_card]" value="{cc.id}">
+                                {cc.cardBrand} ending with {cc.lastFour} ({cc.expMonth}/{cc.expYear})
+                            </label>
+                        </li>
+                    {end:}
+                    <li>
+                        <label for="securesubmit_use_stored_card_new">
+                            <input type="radio" id="securesubmit_use_stored_card_new" name="payment[securesubmit_use_stored_card]" checked="checked" value="new">
+                            <script>document.getElementById('securesubmit_use_stored_card_new').checked = true;</script>
+                            Use new card
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        {end:}
+        {end:}
         <div class="cc-form">
 
 
 			<div class="cardNumber">
 				<div class="title">{t(#Card number#)}:</div>
 				<div class="value">
-					<input id="card-number" type="tel" size="25" class="validate[required,maxSize[255]]" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" />
+					<input id="card-number" type="tel" size="25" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" />
 				</div>
 			</div>
 
@@ -57,10 +81,20 @@
                 <div class="title lite-hide">{t(#Security code#)}:</div>
                 <div class="value">
                     <input size="5" maxlength="4" placeholder="CVV" id="card-cvc" type="text" autocomplete="off">
+                    {if:useSavedCardsEnabled()}
+                        <label for="securesubmit_save_card">
+                            <input type="checkbox" name="payment[securesubmit_save_card]" value="save" style="width: 20px !important;">
+                            Save card?
+                        </label>
+                    {end:}
                 </div>
             </div>
 
 			<input type="hidden" name="payment[securesubmit_token]" id="securesubmit_token" value="" class="token" />
+			<input type="hidden" name="payment[securesubmit_card_type]" id="securesubmit_card_type" value="" class="token" />
+			<input type="hidden" name="payment[securesubmit_last_four]" id="securesubmit_last_four" value="" class="token" />
+			<input type="hidden" name="payment[securesubmit_exp_month]" id="securesubmit_exp_month" value="" class="token" />
+			<input type="hidden" name="payment[securesubmit_exp_year]" id="securesubmit_exp_year" value="" class="token" />
 
 		</div>
 	</div>

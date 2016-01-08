@@ -4,6 +4,8 @@ namespace XLite\Module\Heartland\Securesubmit\View;
 
 class Payment extends \XLite\View\AView
 {
+    protected $paymentMethod = null;
+
     protected function getDefaultTemplate()
     {
         return 'modules/Heartland/Securesubmit/checkout.tpl';
@@ -12,10 +14,24 @@ class Payment extends \XLite\View\AView
     protected function getDataAtttributes()
     {
         $data = array(
-            'data-key' => $this->getCart()->getPaymentMethod()->getSetting('publicKey' . $suffix),
+            'data-key' => $this->getPaymentMethod()->getSetting('publicKey' . $suffix),
         );
 
         return $data;
     }
-}
 
+    protected function useSavedCardsEnabled()
+    {
+        error_log(print_r($this->getPaymentMethod()->getSetting('useSavedCards'), true));
+        return $this->getPaymentMethod()->getSetting('useSavedCards') === 'yes';
+    }
+
+    protected function getPaymentMethod()
+    {
+        if ($this->paymentMethod == null) {
+            $this->paymentMethod = \XLite\Core\Database::getRepo('XLite\Model\Payment\Method')
+                                 ->findOneBy(array('class' => \XLite\Module\Heartland\Securesubmit\Core\Securesubmit::MODEL_PATH));
+        }
+        return $this->paymentMethod;
+    }
+}
