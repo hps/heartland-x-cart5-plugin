@@ -37,7 +37,8 @@ core.bind(
 
         if (handler &&
             heartlandContainer.length &&
-            (heartlandContainer.find('[name="payment[securesubmit_use_stored_card]"]').length === 0 || heartlandContainer.find('[name="payment[securesubmit_use_stored_card]"]:checked').val() === 'new') &&
+            (heartlandContainer.find('[name="payment[securesubmit_use_stored_card]"]:checked').length === 0 || 
+             heartlandContainer.find('[name="payment[securesubmit_use_stored_card]"]:checked').val() === 'new') &&
             !heartlandContainer.find('#securesubmit_token').val()
         ) {
           var card  = jQuery('#card-number').val().replace(/\D/g, '');
