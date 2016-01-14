@@ -22,7 +22,6 @@ class Payment extends \XLite\View\AView
 
     protected function useSavedCardsEnabled()
     {
-        error_log(print_r($this->getPaymentMethod()->getSetting('useSavedCards'), true));
         return $this->getPaymentMethod()->getSetting('useSavedCards') === 'yes';
     }
 

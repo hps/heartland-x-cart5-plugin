@@ -4,7 +4,7 @@ namespace XLite\Module\Heartland\Securesubmit\Model;
 
 /**
  * @Entity
- * @Table (name="heartland_securesubmit_stored_cards")
+ * @Table (name="heartland_securesubmit_credit_cards")
  */
 class SecuresubmitCreditCard extends \XLite\Model\AEntity
 {

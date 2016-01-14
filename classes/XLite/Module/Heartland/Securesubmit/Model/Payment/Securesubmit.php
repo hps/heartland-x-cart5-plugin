@@ -48,9 +48,10 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
     public function getInputErrors(array $data)
     {
         $errors = parent::getInputErrors($data);
+        error_log(print_r($data, true));
 
-        if ((empty($data['securesubmit_token']) && $data['securesubmit_use_stored_card'] === 'new') ||
-            ($data['securesubmit_use_stored_card'] !== 'new' && !empty($data['securesubmit_token']))
+        if ((!isset($data['securesubmit_use_stored_card']) && empty($data['securesubmit_token'])) ||
+            (empty($data['securesubmit_token']) && $data['securesubmit_use_stored_card'] === 'new')
         ) {
             $errors[] = \XLite\Core\Translation::lbl(
                 'Payment processed with errors. Please, try again or ask administrator'
