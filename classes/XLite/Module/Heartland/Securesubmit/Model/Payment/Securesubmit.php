@@ -123,24 +123,87 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
                 $requestMulti = isset($this->request['securesubmit_save_card']) && $this->request['securesubmit_save_card'] === 'save';
             }
 
-            if ($this->isCapture()) {
-                $payment = $this->chargeService->charge(
-                    $this->transaction->getValue(),
-                    'usd',
-                    $token,
-                    $cardholder,
-                    $requestMulti,
-                    $details
-                );
-            } else {
-                $payment = $this->chargeService->authorize(
-                    $this->transaction->getValue(),
-                    'usd',
-                    $token,
-                    $cardholder,
-                    $requestMulti,
-                    $details
-                );
+            try {
+                if ($this->isCapture()) {
+                    $payment = $this->chargeService->charge(
+                        $this->transaction->getValue(),
+                        'usd',
+                        $token,
+                        $cardholder,
+                        $requestMulti,
+                        $details
+                    );
+                } else {
+                    $payment = $this->chargeService->authorize(
+                        $this->transaction->getValue(),
+                        'usd',
+                        $token,
+                        $cardholder,
+                        $requestMulti,
+                        $details
+                    );
+                }
+            } catch (HpsException $e) {
+                if ($e->getCode() == HpsExceptionCodes::POSSIBLE_FRAUD_DETECTED) { // order was fraud
+                    if ($this->getSetting('useAdvancedFraud') == 'yes') {
+                        if ($this->getSetting('emailStoreOwner') == 'yes') {
+                            // email the store owner
+                            HpsSendEmail(
+                                $this->getSetting('notificationEmail'), // to
+                                $this->getSetting('notificationEmail'), // from
+                                'Suspicious order allowed (' . $this->getSetting('prefix') . $this->transaction->getPublicTxnId() . ')', // subject
+                                'Hello,<br><br>Heartland has determined that you should review order ' . $this->getSetting('prefix') . $this->transaction->getPublicTxnId() . ' for the amount of ' . $this->transaction->getValue() . '.', // body
+                                true // html
+                            );
+                        }
+
+                        $result = static::PENDING;
+                        $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_PENDING;
+
+                        $type = $this->isCapture()
+                            ? \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_SALE
+                            : \XLite\Model\Payment\BackendTransaction::TRAN_TYPE_AUTH;
+
+                        $backendTransaction = $this->registerBackendTransaction($type);
+                        $backendTransaction->setDataCell('heartland_id', $payment->transactionId);
+                        $this->transaction->setType($type);
+
+                        $backendTransaction->setStatus($backendTransactionStatus);
+                        $backendTransaction->registerTransactionInOrderHistory('initial request');
+
+                        $this->setDetail('heartland_id', $payment->transactionId);
+                        $note = 'Possible Fraud Detected for transaction ' . $payment->transactionId . '. Please review.';
+                        $this->transaction->setNote($note);
+
+                        return $result;
+                    } else {
+                        // advanced fraud is turned off
+                        if (!empty($this->getSetting('fraudText'))) {
+                            // override fraud text
+                            $result = static::FAILED;
+                            \XLite\Core\TopMessage::addError($this->getSetting('fraudText'));
+                            $note = $e->getMessage(); // return the real error message to the notes so that the merchant knows whats up.
+
+                            $this->transaction->setNote($note);
+                            return result;
+                        } else {
+                            // return the real error
+                            $result = static::FAILED;
+                            \XLite\Core\TopMessage::addError($e->getMessage());
+                            $note = $e->getMessage();
+
+                            $this->transaction->setNote($note);
+                            return result;
+                        }
+                    }
+                } else {
+                    $result = static::FAILED;
+                    \XLite\Core\TopMessage::addError($e->getMessage());
+                    $note = $e->getMessage();
+
+                    $this->transaction->setNote($note);
+                    return result;
+                }
             }
 
             if ($requestMulti && $payment->tokenData->responseCode === '0' && $payment->tokenData->tokenValue !== '') {
@@ -199,6 +262,20 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         $transaction->setStatus($backendTransactionStatus);
 
         return \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS == $backendTransactionStatus;
+    }
+
+    protected function HpsSendEmail($to, $from, $subject, $body, $isHtml)
+    {
+        $message = '<html><body>';
+        $message .= $body;
+        $message .= '</body></html>';
+        $headers = "From: $from\r\n";
+        $headers .= "Reply-To: $from\r\n";
+        if ($isHtml) {
+            $headers .= "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type: text/html; charset=ISO-8859-1\r\n";
+        }
+        mail($to, $subject, $message, $headers);
     }
 
     protected function doVoid(\XLite\Model\Payment\BackendTransaction $transaction)
