@@ -47,6 +47,40 @@
     </tr>
 
     <tr>
+      <td class="setting-name"><label for="settings_useAdvancedFraud">{t(#Enable Advanced Fraud#)}</label></td>
+      <td>
+      <select id="settings_useAdvancedFraud" name="settings[useAdvancedFraud]" class="form-control">
+        <option value="no" selected="{isSelected(paymentMethod.getSetting(#useAdvancedFraud#),#no#)}">{t(#No#)}</option>
+        <option value="yes" selected="{isSelected(paymentMethod.getSetting(#useAdvancedFraud#),#yes#)}">{t(#Yes#)}</option>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="setting-name"><label for="settings_emailStoreOwner">{t(#Email Store Owner of Suspected Fraud#)}</label></td>
+      <td>
+      <select id="settings_emailStoreOwner" name="settings[emailStoreOwner]" class="form-control">
+        <option value="no" selected="{isSelected(paymentMethod.getSetting(#emailStoreOwner#),#no#)}">{t(#No#)}</option>
+        <option value="yes" selected="{isSelected(paymentMethod.getSetting(#emailStoreOwner#),#yes#)}">{t(#Yes#)}</option>
+      </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="setting-name"><label for="settings_notificationEmail">{t(#Notification Email Address#)}</label></td>
+      <td>
+        <input type="text" id="settings_prefix" value="{paymentMethod.getSetting(#notificationEmail#)}" name="settings[notificationEmail]" />
+      </td>
+    </tr>
+
+    <tr>
+      <td class="setting-name"><label for="settings_fraudText">{t(#Fraud Text#)}</label></td>
+      <td>
+        <input type="text" id="settings_prefix" value="{paymentMethod.getSetting(#fraudText#)}" name="settings[fraudText]" />
+      </td>
+    </tr>
+
+    <tr>
       <td>&nbsp;</td>
       <td>
         <div class="buttons">
