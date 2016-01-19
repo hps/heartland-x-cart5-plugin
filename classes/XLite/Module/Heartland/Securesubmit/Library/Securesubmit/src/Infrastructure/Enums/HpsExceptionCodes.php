@@ -37,4 +37,5 @@ abstract class HpsExceptionCodes
     const PROCESSING_ERROR              = 24;
     const ISSUER_TIMEOUT_REVERSAL_ERROR = 25;
     const UNKNOWN_CREDIT_ERROR          = 26;
+    const POSSIBLE_FRAUD_DETECTED       = 27;
 }
