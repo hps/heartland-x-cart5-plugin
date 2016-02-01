@@ -15,3 +15,9 @@ XLite\Model\Payment\Method:
         value: xcart
       - name: useSavedCards
         value: no
+      - name: useAdvancedFraud
+        value: no
+      - name: emailStoreOwner
+        value: no
+      - name: notificationEmail
+      - name: fraudText
