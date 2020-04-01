@@ -1,23 +1,23 @@
-<div class="cc-form-container heartland-container" {printTagAttributes(getDataAtttributes()):h}>
+<div class="cc-form-container heartland-container" {{ this.printTagAttributes(this.getDataAtttributes())|raw }}>
 	<div class="header-line"></div>
 	<div class="content">
         <div class="header">
             <div class="lock"></div>
-            <h2>{t(#Secure credit card payment#)}</h2>
+            <h2>{{ t('Secure credit card payment') }}</h2>
         </div>
-        {if:profile.hasSecuresubmitCreditCards()}
-        {if:useSavedCardsEnabled()}
+        {% if this.profile.hasSecuresubmitCreditCards() %}
+        {% if this.useSavedCardsEnabled() %}
             <div class="saved-cards">
                 <h3>Saved Cards</h3>
                 <ul>
-                    {foreach:profile.getSecuresubmitCreditCards(),i,cc}
+                    {% for i, cc in this.profile.getSecuresubmitCreditCards() %}
                         <li>
-                            <label for="securesubmit_use_stored_card_{i}">
-                                <input type="radio" id="securesubmit_use_stored_card_{i}" name="payment[securesubmit_use_stored_card]" value="{cc.id}">
-                                {cc.cardBrand} ending with {cc.lastFour} ({cc.expMonth}/{cc.expYear})
+                            <label for="securesubmit_use_stored_card_{{ i }}">
+                                <input type="radio" id="securesubmit_use_stored_card_{{ i }}" name="payment[securesubmit_use_stored_card]" value="{{ cc.id }}">
+                                {{ cc.cardBrand }} ending with {{ cc.lastFour }} ({{ cc.expMonth }}/{{ cc.expYear }})
                             </label>
                         </li>
-                    {end:}
+                    {% endfor %}
                     <li>
                         <label for="securesubmit_use_stored_card_new">
                             <input type="radio" id="securesubmit_use_stored_card_new" name="payment[securesubmit_use_stored_card]" checked="checked" value="new">
@@ -27,30 +27,30 @@
                     </li>
                 </ul>
             </div>
-        {end:}
-        {end:}
+        {% endif %}
+        {% endif %}
         <div class="cc-form">
 
 
 			<div class="cardNumber">
-				<div class="title">{t(#Card number#)}:</div>
+				<div class="title">{{ t('Card number') }}:</div>
 				<div class="value">
 					<input id="card-number" type="tel" size="25" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" />
 				</div>
 			</div>
 
             <div class="cardExpire">
-                <div class="title lite-hide">{t(#Expiration date#)}:</div>
+                <div class="title lite-hide">{{ t('Expiration date') }}:</div>
                 <div class="value">
                     <div class="top-line">
-                        <div class="top-text lite-hide">{t(#MONTH#)} / {t(#YEAR#)}</div>
+                        <div class="top-text lite-hide">{{ t('MONTH') }} / {{ t('YEAR') }}</div>
                     </div>
                     <div class="bottom-line">
-                        <div class="left-text lite-hide">{t(#VALID THRU#)}</div>
+                        <div class="left-text lite-hide">{{ t('VALID THRU') }}</div>
                         <div class="left-text lite-hide default-hide mobile-show">
-                            <span class="valid-thru">{t(#VALID THRU#)}</span>
+                            <span class="valid-thru">{{ t('VALID THRU') }}</span>
                             <br>
-                            <span class="month-year">{t(#MONTH#)} / {t(#YEAR#)}</span>
+                            <span class="month-year">{{ t('MONTH') }} / {{ t('YEAR') }}</span>
                         </div>
                         <div class="month-container">
                             <select id="card-expiry-month" class="validate[required]">
@@ -67,26 +67,26 @@
                                 <option value="11">11</option>
                                 <option value="12">12</option>
                             </select>
-                            <div class="bottom-text-month default-hide">{t(#MONTH#)}</div>
+                            <div class="bottom-text-month default-hide">{{ t('MONTH') }}</div>
                         </div>
                         <div class="year-container">
                             <select id="card-expiry-year" class="validate[required]"></select>
-                            <div class="bottom-text-month default-hide">{t(#YEAR#)}</div>
+                            <div class="bottom-text-month default-hide">{{ t('YEAR') }}</div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="cardCVV2 required">
-                <div class="title lite-hide">{t(#Security code#)}:</div>
+                <div class="title lite-hide">{{ t('Security code') }}:</div>
                 <div class="value">
                     <input size="5" maxlength="4" placeholder="CVV" id="card-cvc" type="text" autocomplete="off">
-                    {if:useSavedCardsEnabled()}
+                    {% if this.useSavedCardsEnabled() %}
                         <label for="securesubmit_save_card">
                             <input type="checkbox" name="payment[securesubmit_save_card]" value="save" style="width: 20px !important;">
                             Save card?
                         </label>
-                    {end:}
+                    {% endif %}
                 </div>
             </div>
 

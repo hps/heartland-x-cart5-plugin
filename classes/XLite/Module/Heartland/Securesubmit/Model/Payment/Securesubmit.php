@@ -42,7 +42,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
 
     public function getInputTemplate()
     {
-        return 'modules/Heartland/Securesubmit/payment.tpl';
+        return 'modules/Heartland/Securesubmit/payment.twig';
     }
 
     public function getInputErrors(array $data)

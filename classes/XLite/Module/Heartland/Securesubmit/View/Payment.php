@@ -8,7 +8,7 @@ class Payment extends \XLite\View\AView
 
     protected function getDefaultTemplate()
     {
-        return 'modules/Heartland/Securesubmit/checkout.tpl';
+        return 'modules/Heartland/Securesubmit/checkout.twig';
     }
 
     protected function getDataAtttributes()

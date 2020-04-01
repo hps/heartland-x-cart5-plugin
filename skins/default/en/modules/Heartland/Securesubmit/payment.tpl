@@ -1,1 +1,0 @@
-<widget class="XLite\Module\Heartland\Securesubmit\View\Payment" />
