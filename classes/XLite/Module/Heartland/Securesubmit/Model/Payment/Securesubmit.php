@@ -2,6 +2,19 @@
 
 namespace XLite\Module\Heartland\Securesubmit\Model\Payment;
 
+use GlobalPayments\Api\Entities\EncryptionData;
+use GlobalPayments\Api\PaymentMethods\CreditCardData;
+use GlobalPayments\Api\PaymentMethods\CreditTrackData;
+use GlobalPayments\Api\Services\CreditService;
+use GlobalPayments\Api\ServicesConfig;
+use GlobalPayments\Api\ServicesContainer;
+use GlobalPayments\Api\Entities\Address;
+use GlobalPayments\Api\Entities\Customer;
+use GlobalPayments\Api\Services\ReportingService;
+use GlobalPayments\Api\Entities\Reporting\TransactionSummary;
+use GlobalPayments\Api\Entities\Transaction;
+use GlobalPayments\Api\Entities\Exceptions;
+
 class Securesubmit extends \XLite\Model\Payment\Base\Online
 {
     protected $securesubmitLibIncluded = false;
@@ -86,26 +99,22 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
 
         $note = '';
         $requestMulti = false;
-
         try {
-            $token = new \HpsTokenData();
-            $token->tokenValue = $this->request['securesubmit_token'];
+            $hpstoken = new CreditCardData();
+            $hpstoken->token = $this->request['securesubmit_token'];
 
-            $address = new \HpsAddress();
-            $address->address = $this->getProfile()->getBillingAddress()->getStreet();
+            $address = new Address();
+            $address->streetAddress1 = $this->getProfile()->getBillingAddress()->getStreet();
             $address->city = $this->getProfile()->getBillingAddress()->getCity();
             $address->state = $this->getProfile()->getBillingAddress()->getState()->getCode();
-            $address->zip = preg_replace('/[^a-zA-Z0-9]/', '', $this->getProfile()->getBillingAddress()->getZipcode());
+            $address->postalCode = preg_replace('/[^a-zA-Z0-9]/', '', $this->getProfile()->getBillingAddress()->getZipcode());
             $address->country = $this->getProfile()->getBillingAddress()->getCountry()->getCode();
 
-            $cardHolder = new \HpsCardHolder();
-            $cardHolder->firstName = $this->getProfile()->getBillingAddress()->getFirstname();
-            $cardHolder->lastName = $this->getProfile()->getBillingAddress()->getLastname();
-            $cardHolder->phone = preg_replace('/[^0-9]/', '', $this->getCustomerPhone());
-            $cardHolder->emailAddress = $this->getProfile()->getLogin();
-            $cardHolder->address = $address;
+            $hpstoken->cardHolderName = $this->getProfile()->getBillingAddress()->getFirstname().''.$this->getProfile()->getBillingAddress()->getLastname();
+            $hpstoken->phone = preg_replace('/[^0-9]/', '', $this->getCustomerPhone());
+            $hpstoken->emailAddress = $this->getProfile()->getLogin();
 
-            $details = new \HpsTransactionDetails();
+            $details = new TransactionSummary();
             $details->invoiceNumber = $this->getSetting('prefix') . $this->transaction->getPublicTxnId();
 
             if (isset($this->request['securesubmit_use_stored_card']) && $this->request['securesubmit_use_stored_card'] !== 'new') {
@@ -118,43 +127,41 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
                 if ($cards === array()) {
                     throw new Exception('Stored card cannot be found.');
                 }
-                $token->tokenValue = $cards[0]->getToken();
             } else {
                 $requestMulti = isset($this->request['securesubmit_save_card']) && $this->request['securesubmit_save_card'] === 'save';
             }
 
             if ($this->isCapture()) {
-                $payment = $this->chargeService->charge(
-                    $this->transaction->getValue(),
-                    'usd',
-                    $token,
-                    $cardholder,
-                    $requestMulti,
-                    $details
-                );
+  
+		$payment = $hpstoken->($this->transaction->getValue())
+                ->withCurrency('usd')
+                ->withAddress($address)
+                ->withAllowDuplicates(true)
+				//->withInvoiceNumber($details->invoiceNumber)
+                ->execute();
             } else {
-                $payment = $this->chargeService->authorize(
-                    $this->transaction->getValue(),
-                    'usd',
-                    $token,
-                    $cardholder,
-                    $requestMulti,
-                    $details
-                );
+
+		$payment = $hpstoken->authorize($this->transaction->getValue())
+                ->withCurrency('usd')
+                ->withAddress($address)
+               // ->withInvoiceNumber($details->invoiceNumber)
+                ->withAmountEstimated($this->transaction->getValue())
+                ->withAllowDuplicates(true)
+                ->execute();
+                
             }
 
             if ($requestMulti && $payment->tokenData->responseCode === '0' && $payment->tokenData->tokenValue !== '') {
                 $card = new \XLite\Module\Heartland\Securesubmit\Model\SecuresubmitCreditCard();
                 $this->getEM()->persist($card);
                 $card->setProfileId($this->getProfile()->getProfileId());
-                $card->setToken($payment->tokenData->tokenValue);
+                $card->setToken($hpstoken->token);
                 $card->setCardBrand(isset($this->request['securesubmit_card_type']) ? $this->request['securesubmit_card_type'] : '');
                 $card->setExpMonth(isset($this->request['securesubmit_exp_month']) ? $this->request['securesubmit_exp_month'] : '');
                 $card->setExpYear(isset($this->request['securesubmit_exp_year']) ? $this->request['securesubmit_exp_year'] : '');
                 $card->setLastFour(isset($this->request['securesubmit_last_four']) ? $this->request['securesubmit_last_four'] : '');
                 $this->getEM()->flush();
             }
-
             $result = static::COMPLETED;
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
 
@@ -283,8 +290,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
     protected function includeSecuresubmitLibrary()
     {
         if (!$this->securesubmitLibIncluded) {
-            require_once LC_DIR_MODULES . 'Heartland' . LC_DS . 'Securesubmit' . LC_DS . 'Library' . LC_DS . 'Securesubmit' . LC_DS . 'Hps.php';
-
+            require_once LC_DIR_MODULES . 'Heartland' . LC_DS . 'Securesubmit' . LC_DS . 'Library' . LC_DS . 'vendor' . LC_DS . 'autoload.php';
             if ($this->transaction) {
                 $method = $this->transaction->getPaymentMethod();
                 $key = $method->getSetting('secretKey' . $suffix);
@@ -294,16 +300,14 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
                     ->findOneBy(array('service_name' => 'Securesubmit'));
                 $key = $method->getSetting('secretKey' . $suffix);
             }
-
-            $heartlandConfig = new \HpsServicesConfig();
-            $heartlandConfig->secretApiKey = $key;
-
-            $heartlandConfig->versionNumber = '1514';
-            $heartlandConfig->developerId = '002914';
-
-            $this->chargeService = new \HpsCreditService($heartlandConfig);
-
+        
+            $config = new ServicesConfig();
+            $config->secretApiKey = $key;
+            //$env = $config->environment;
+            $config->serviceUrl = 'https://cert.api2.heartlandportico.com'; 
+            $this->chargeService =  ServicesContainer::configure($config);
             $this->securesubmitLibIncluded = true;
+
         }
     }
 }
