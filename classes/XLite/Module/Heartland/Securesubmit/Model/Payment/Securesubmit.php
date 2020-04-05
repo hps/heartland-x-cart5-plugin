@@ -133,18 +133,18 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
 
             if ($this->isCapture()) {
   
-		$payment = $hpstoken->($this->transaction->getValue())
+		$payment = $hpstoken->charge($this->transaction->getValue())
                 ->withCurrency('usd')
                 ->withAddress($address)
                 ->withAllowDuplicates(true)
-				//->withInvoiceNumber($details->invoiceNumber)
+		->withInvoiceNumber($details->invoiceNumber)
                 ->execute();
             } else {
 
 		$payment = $hpstoken->authorize($this->transaction->getValue())
                 ->withCurrency('usd')
                 ->withAddress($address)
-               // ->withInvoiceNumber($details->invoiceNumber)
+                ->withInvoiceNumber($details->invoiceNumber)
                 ->withAmountEstimated($this->transaction->getValue())
                 ->withAllowDuplicates(true)
                 ->execute();
@@ -193,9 +193,9 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         $this->includeSecuresubmitLibrary();
 
         $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_FAILED;
-
+        $transactionId = $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue();
         try {
-            $payment = $this->chargeService->capture($transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue());
+            $payment = Transaction::fromId($transactionId)->capture()->execute();
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
         } catch (\Exception $e) {
             $transaction->setDataCell('errorMessage', $e->getMessage());
@@ -232,17 +232,14 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         $this->includeSecuresubmitLibrary();
 
         $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_FAILED;
-        $transactionId = $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue();
-
         try {
             if ($isDoVoid) {
-                $payment = $this->chargeService->void($transactionId);
+                $payment = Transaction::fromId($transactionId)->void()->execute();
             } else {
-                $payment = $this->chargeService->refund(
-                    $this->transaction->getValue(),
-                    'usd',
-                    $transactionId
-                );
+                $payment = Transaction::fromId($transactionId)
+                    ->refund($this->transaction->getValue())
+                    ->withCurrency('usd')
+                    ->execute();
             }
 
             $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_SUCCESS;
@@ -303,7 +300,6 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         
             $config = new ServicesConfig();
             $config->secretApiKey = $key;
-            //$env = $config->environment;
             $config->serviceUrl = 'https://cert.api2.heartlandportico.com'; 
             $this->chargeService =  ServicesContainer::configure($config);
             $this->securesubmitLibIncluded = true;
