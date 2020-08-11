@@ -151,11 +151,11 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
                 
             }
 
-            if ($requestMulti && $payment->tokenData->responseCode === '0' && $payment->tokenData->tokenValue !== '') {
+            if ($requestMulti && $payment->responseCode === '0') {
                 $card = new \XLite\Module\Heartland\Securesubmit\Model\SecuresubmitCreditCard();
                 $this->getEM()->persist($card);
                 $card->setProfileId($this->getProfile()->getProfileId());
-                $card->setToken($hpstoken->token);
+                $card->setToken($payment->token);   
                 $card->setCardBrand(isset($this->request['securesubmit_card_type']) ? $this->request['securesubmit_card_type'] : '');
                 $card->setExpMonth(isset($this->request['securesubmit_exp_month']) ? $this->request['securesubmit_exp_month'] : '');
                 $card->setExpYear(isset($this->request['securesubmit_exp_year']) ? $this->request['securesubmit_exp_year'] : '');
@@ -300,7 +300,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         
             $config = new ServicesConfig();
             $config->secretApiKey = $key;
-            $config->serviceUrl = 'https://cert.api2.heartlandportico.com'; 
+            $config->serviceUrl = strpos($config->secretApiKey, 'prod') ? 'https://api2.heartlandportico.com' : 'https://cert.api2.heartlandportico.com';
             $this->chargeService =  ServicesContainer::configure($config);
             $this->securesubmitLibIncluded = true;
 
