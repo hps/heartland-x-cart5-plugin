@@ -232,6 +232,7 @@ class Securesubmit extends \XLite\Model\Payment\Base\Online
         $this->includeSecuresubmitLibrary();
 
         $backendTransactionStatus = \XLite\Model\Payment\BackendTransaction::STATUS_FAILED;
+		$transactionId = $transaction->getPaymentTransaction()->getDataCell('heartland_id')->getValue();
         try {
             if ($isDoVoid) {
                 $payment = Transaction::fromId($transactionId)->void()->execute();
