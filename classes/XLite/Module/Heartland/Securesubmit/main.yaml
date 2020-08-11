@@ -1,0 +1,11 @@
+version: 5.4.0.0
+type: payment
+authorName: Heartland
+moduleName: Securesubmit
+description: 'Use Heartland for PCI-friendly credit card payments'
+minorRequiredCoreVersion: 0
+dependsOn: {  }
+incompatibleWith: {  }
+skins: {  }
+showSettingsForm: false
+canDisable: true

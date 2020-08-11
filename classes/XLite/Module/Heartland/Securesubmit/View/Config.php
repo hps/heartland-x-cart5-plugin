@@ -25,6 +25,6 @@ class Config extends \XLite\View\AView
 
     protected function getDefaultTemplate()
     {
-        return 'modules/Heartland/Securesubmit/config.tpl';
+        return 'modules/Heartland/Securesubmit/config.twig';
     }
 }

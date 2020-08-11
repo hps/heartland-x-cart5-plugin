@@ -9,7 +9,7 @@ class AdminProfile extends \XLite\View\Tabs\AdminProfile implements \XLite\Base\
         if ($this->getProfile()) {
             $this->tabs['securesubmit_credit_cards'] = array(
                  'title'    => 'SecureSubmit credit cards',
-                 'template' => 'modules/Heartland/Securesubmit/account/securesubmit_credit_cards.tpl',
+                 'template' => 'modules/Heartland/Securesubmit/account/securesubmit_credit_cards.twig',
             );
         }
 

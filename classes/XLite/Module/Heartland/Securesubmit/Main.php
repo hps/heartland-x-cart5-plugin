@@ -20,16 +20,17 @@ abstract class Main extends \XLite\Module\AModule
 
     public static function getMajorVersion()
     {
-        return '5.2';
+        return '5.4';
     }
 
     public static function getMinorVersion()
     {
-        return '6';
+        return '0';
     }
 
     public static function getModuleType()
     {
         return static::MODULE_TYPE_PAYMENT;
     }
+
 }
